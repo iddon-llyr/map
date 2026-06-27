@@ -175,6 +175,24 @@
   .month-op .mt{flex:1;color:#c3d2e8}
   .month-head{font-size:.78rem;font-weight:700;color:var(--green);margin:12px 0 6px}
   .month-empty{color:var(--muted);font-style:italic;font-size:.85rem;padding:14px 0;text-align:center}
+  .asset-item{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:7px;
+    border:1px solid var(--line);background:var(--card);margin-bottom:6px}
+  .asset-item .ai{flex:1;min-width:0}
+  .asset-item .an{font-weight:700;font-size:.9rem}
+  .asset-item .ah{font-size:.74rem;color:var(--muted);margin-top:2px}
+  .asset-item button{background:none;border:1px solid var(--line);color:var(--ink);border-radius:6px;
+    padding:4px 8px;font-size:.72rem;cursor:pointer;font-family:inherit}
+  .asset-item .arep{color:var(--gold);border-color:var(--gold)}
+  .asset-item .adel{color:#ff8a8a;flex:0 0 auto}
+  .repair-line{display:flex;justify-content:space-between;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line);font-size:.82rem}
+  .repair-line .rd{color:var(--muted);font-size:.74rem;white-space:nowrap}
+  .wx-box{background:#13243d;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:.8rem}
+  .wx-box .wxh{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .wx-box .wxv{display:flex;gap:14px;flex-wrap:wrap;color:var(--ink)}
+  .wx-box .wxnote{font-size:.68rem;color:var(--muted);margin-top:4px;font-style:italic}
+  .place-hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:700;
+    background:var(--gold);color:#2a1f08;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600;
+    box-shadow:0 2px 8px rgba(0,0,0,.4);display:none}
 </style>
 </head>
 <body>
@@ -184,11 +202,13 @@
   <span class="total" id="totalAc"></span>
   <button id="todoBtn" class="todo-open">📋 Tasgau · To-do <span id="todoCount" class="todo-count"></span></button>
   <button id="reportBtn" class="report-open">📊 Adroddiadau · Reports</button>
+  <button id="assetBtn" class="report-open" style="background:var(--soil);color:#1a1206">🚜 Peiriannau · Assets</button>
   <span class="sync ro" id="syncStatus"><span class="dot"></span><span id="syncText">Darllen yn unig · Read-only</span>
     <button id="syncBtn">Mewngofnodi · Connect</button></span>
 </header>
 <div class="wrap">
   <div id="map">
+    <div class="place-hint" id="placeHint">Cliciwch ar y map i osod y clos · Click the map to place the farmstead</div>
     <div class="legend" id="legend"></div>
     <div id="loadErr">
       <strong>Methu llwytho'r map · Map couldn't load</strong><br><br>
@@ -417,6 +437,29 @@
     <div id="monthlyBody"></div>
   </div>
   <div class="modal-btns"><button class="cancel" id="reportClose">Cau · Close</button></div>
+</div></div>
+
+<div class="modal-bg" id="assetModal"><div class="modal" style="max-width:520px">
+  <h3>Peiriannau ac asedion · Machinery &amp; assets</h3>
+  <div id="assetAddRow" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <input type="text" id="asName" placeholder="Peiriant · Machine (e.e. Valtra T151)" style="flex:1 1 100%">
+    <input type="text" id="asHours" placeholder="Oriau · Hours" style="flex:1">
+    <input type="text" id="asReg" placeholder="Reg / ID (dewisol)" style="flex:1">
+    <button class="save" id="asAdd" style="flex:0 0 auto;padding:8px 14px">+</button>
+  </div>
+  <div id="assetList"></div>
+  <div class="modal-btns"><button class="cancel" id="assetClose">Cau · Close</button></div>
+</div></div>
+
+<div class="modal-bg" id="repairModal"><div class="modal" style="max-width:460px">
+  <h3 id="repairTitle">Atgyweiriadau · Repairs</h3>
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    <input type="date" id="rpDate" style="flex:0 0 auto;width:auto">
+    <input type="text" id="rpText" placeholder="e.e. New hydraulic hose" style="flex:1">
+    <button class="save" id="rpAdd" style="flex:0 0 auto;padding:8px 12px">+</button>
+  </div>
+  <div id="repairList"></div>
+  <div class="modal-btns"><button class="cancel" id="repairClose">Cau · Close</button></div>
 </div></div>
 
 <script>
@@ -788,6 +831,8 @@ function renderOps(name){
       (o.product?'<div class="op-detail">'+esc(o.product)+'</div>':'')+
       (drl?'<div class="op-detail" style="color:#a8c98a">🌱 '+esc(drl)+'</div>':'')+
       (spr?'<div class="op-detail" style="color:#b9a3e0">💧 '+esc(spr)+'</div>':'')+
+      (o.weather?'<div class="op-detail" style="color:#7fc3e0">🌤 '+wxStr(o.weather)+'</div>':
+        (isSpray(o.type)?'<div class="op-detail"><button class="wx-fetch" data-wx="'+o.id+'" style="background:none;border:1px solid var(--line);color:#7fc3e0;border-radius:6px;padding:2px 8px;font-size:.7rem;cursor:pointer;font-family:inherit">🌤 Nôl tywydd · Get weather</button></div>':''))+
       (cost?'<div class="op-detail" style="color:var(--soil);font-weight:600">'+cost+'</div>':'')+
       (yld?'<div class="op-detail" style="color:var(--green);font-weight:600">⛁ '+yld+'</div>':'')+
       (o.notes?'<div class="op-detail" style="color:#9fb2cc">'+esc(o.notes)+'</div>':'')+
@@ -800,11 +845,29 @@ function renderOps(name){
       await commit();renderOps(name);
     }
   });
+  list.querySelectorAll('.wx-fetch').forEach(b=>b.onclick=async()=>{
+    const op=(store[name].ops||[]).find(x=>x.id==b.dataset.wx); if(!op)return;
+    b.textContent='⏳ ...';
+    const c=fieldCentroid(name);
+    try{
+      const w=await fetchWeather(c[1],c[0],op.date);
+      op.weather=w; await commit(); renderOps(name);
+    }catch(e){ b.textContent='⚠ methu / failed'; }
+  });
+}
+function wxStr(w){
+  const p=[];
+  if(w.temp!=null)p.push(w.temp+'°C');
+  if(w.humidity!=null)p.push(w.humidity+'% RH');
+  if(w.wind!=null)p.push(w.wind+' km/h '+windCompass(w.windDir));
+  if(w.precip!=null&&w.precip>0)p.push(w.precip+'mm glaw/rain');
+  return p.join(' · ')+' <span style="color:var(--muted);font-size:.66rem">(amcan/modelled)</span>';
 }
 function refreshAll(){
   gj.setStyle(f=>fieldStyle(f.properties.name));
   if(selected)selectField(selected);
   if(typeof updateTodoCount==='function')updateTodoCount();
+  if(typeof placeSteadingMarker==='function')placeSteadingMarker();
 }
 function fmtDate(d){if(!d)return '';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;}
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -922,6 +985,11 @@ document.getElementById('opSave').onclick=async()=>{
   store[selected].ops.push(op);
   opModal.classList.remove('open');
   await commit();renderOps(selected);
+  // auto-fetch weather for sprays (best-effort, non-blocking)
+  if(isSpray(type)&&op.date){
+    const c=fieldCentroid(selected);
+    if(c){ try{ const w=await fetchWeather(c[1],c[0],op.date); op.weather=w; await commit(); renderOps(selected); }catch(e){/* leave manual button */} }
+  }
 };
 
 /* ---- crop modal ---- */
@@ -1120,6 +1188,116 @@ document.querySelectorAll('.rtab').forEach(t=>t.onclick=()=>{
   document.getElementById('rep-margins').style.display=t.dataset.rtab==='margins'?'block':'none';
   document.getElementById('rep-monthly').style.display=t.dataset.rtab==='monthly'?'block':'none';
 });
+
+// ---- farmstead marker + asset register ----
+let steadingMarker=null, placingStead=false, openAssetId=null;
+function assets(){ if(!store._assets)store._assets=[]; return store._assets; }
+function placeSteadingMarker(){
+  const ll=store._steading;
+  if(steadingMarker){ map.removeLayer(steadingMarker); steadingMarker=null; }
+  if(!ll) return;
+  const icon=L.divIcon({className:'',html:'<div style="font-size:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8));cursor:pointer">🏠</div>',iconSize:[30,30],iconAnchor:[15,15]});
+  steadingMarker=L.marker([ll.lat,ll.lng],{icon,draggable:true,title:'Clos / Farmstead — click for assets'}).addTo(map);
+  steadingMarker.on('click',()=>openAssets());
+  steadingMarker.on('dragend',async e=>{ const p=e.target.getLatLng(); store._steading={lat:p.lat,lng:p.lng}; await commit(); });
+}
+function startPlacing(){
+  placingStead=true;
+  document.getElementById('placeHint').style.display='block';
+  document.getElementById('assetModal').classList.remove('open');
+}
+map.on('click',async e=>{
+  if(!placingStead)return;
+  placingStead=false;
+  document.getElementById('placeHint').style.display='none';
+  store._steading={lat:e.latlng.lat,lng:e.latlng.lng};
+  placeSteadingMarker(); await commit(); openAssets();
+});
+
+function openAssets(){ renderAssets(); document.getElementById('assetModal').classList.add('open'); }
+function renderAssets(){
+  const list=document.getElementById('assetList');
+  const a=assets();
+  let head='';
+  if(!store._steading) head='<div class="month-empty">📍 <button class="save" id="placeSteadBtn" style="padding:6px 12px">Gosod lleoliad y clos · Place farmstead on map</button></div>';
+  else head='<div style="font-size:.74rem;color:var(--muted);margin-bottom:8px">🏠 Clos wedi ei osod — cliciwch a llusgwch i symud. <button id="placeSteadBtn" style="background:none;border:none;color:var(--gold);text-decoration:underline;cursor:pointer;font-family:inherit">Ailosod</button></div>';
+  if(!a.length){ list.innerHTML=head+'<div class="month-empty">Dim peiriannau eto · No machinery yet</div>'; bindPlace(); return; }
+  list.innerHTML=head+a.map(m=>
+    '<div class="asset-item"><div class="ai"><div class="an">'+esc(m.name)+'</div>'+
+    '<div class="ah">'+(m.hours?esc(m.hours)+' awr/hrs':'')+(m.reg?' · '+esc(m.reg):'')+
+    (m.repairs&&m.repairs.length?' · '+m.repairs.length+' atgyweiriad/repairs':'')+'</div></div>'+
+    '<button class="arep" data-rep="'+m.id+'">🔧</button>'+
+    '<button class="adel" data-adel="'+m.id+'">✕</button></div>'
+  ).join('');
+  list.querySelectorAll('[data-rep]').forEach(b=>b.onclick=()=>openRepairs(b.dataset.rep));
+  list.querySelectorAll('[data-adel]').forEach(b=>b.onclick=async()=>{
+    if(confirm('Dileu peiriant? · Delete machine?')){ store._assets=assets().filter(x=>x.id!=b.dataset.adel); await commit(); renderAssets(); }
+  });
+  bindPlace();
+}
+function bindPlace(){ const b=document.getElementById('placeSteadBtn'); if(b)b.onclick=startPlacing; }
+document.getElementById('asAdd').onclick=async()=>{
+  const name=document.getElementById('asName').value.trim(); if(!name)return;
+  assets().push({id:Date.now()+''+Math.floor(Math.random()*999),name,
+    hours:document.getElementById('asHours').value.trim(),
+    reg:document.getElementById('asReg').value.trim(),repairs:[]});
+  ['asName','asHours','asReg'].forEach(i=>document.getElementById(i).value='');
+  await commit(); renderAssets();
+};
+document.getElementById('assetBtn').onclick=openAssets;
+document.getElementById('assetClose').onclick=()=>document.getElementById('assetModal').classList.remove('open');
+document.getElementById('assetModal').addEventListener('click',e=>{if(e.target.id==='assetModal')e.currentTarget.classList.remove('open')});
+
+// repairs sub-modal
+function openRepairs(id){
+  openAssetId=id;
+  const m=assets().find(x=>x.id==id); if(!m)return;
+  document.getElementById('repairTitle').textContent='Atgyweiriadau · '+m.name;
+  document.getElementById('rpDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('rpText').value='';
+  renderRepairs(); document.getElementById('repairModal').classList.add('open');
+}
+function renderRepairs(){
+  const m=assets().find(x=>x.id==openAssetId); const list=document.getElementById('repairList');
+  if(!m||!m.repairs||!m.repairs.length){ list.innerHTML='<div class="month-empty">Dim atgyweiriadau eto · No repairs logged</div>'; return; }
+  list.innerHTML=m.repairs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(r=>
+    '<div class="repair-line"><span>'+esc(r.text)+'</span><span class="rd">'+fmtDate(r.date)+' <button data-rdel="'+r.id+'" style="background:none;border:none;color:#ff8a8a;cursor:pointer">✕</button></span></div>'
+  ).join('');
+  list.querySelectorAll('[data-rdel]').forEach(b=>b.onclick=async()=>{
+    m.repairs=m.repairs.filter(x=>x.id!=b.dataset.rdel); await commit(); renderRepairs(); renderAssets();
+  });
+}
+document.getElementById('rpAdd').onclick=async()=>{
+  const m=assets().find(x=>x.id==openAssetId); if(!m)return;
+  const txt=document.getElementById('rpText').value.trim(); if(!txt)return;
+  if(!m.repairs)m.repairs=[];
+  m.repairs.push({id:Date.now()+''+Math.floor(Math.random()*999),date:document.getElementById('rpDate').value,text:txt});
+  document.getElementById('rpText').value='';
+  await commit(); renderRepairs(); renderAssets();
+};
+document.getElementById('repairClose').onclick=()=>document.getElementById('repairModal').classList.remove('open');
+document.getElementById('repairModal').addEventListener('click',e=>{if(e.target.id==='repairModal')e.currentTarget.classList.remove('open')});
+
+// ---- historical weather (Open-Meteo, free, no key) ----
+async function fetchWeather(lat,lng,dateStr){
+  // dateStr yyyy-mm-dd; fetch hourly, return midday-ish snapshot
+  const url='https://archive-api.open-meteo.com/v1/archive?latitude='+lat.toFixed(4)+
+    '&longitude='+lng.toFixed(4)+'&start_date='+dateStr+'&end_date='+dateStr+
+    '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation&timezone=Europe%2FLondon';
+  const r=await fetch(url);
+  if(!r.ok) throw new Error('weather HTTP '+r.status);
+  const j=await r.json();
+  const h=j.hourly; if(!h||!h.time) throw new Error('no data');
+  // pick 12:00 if available, else midpoint
+  let idx=h.time.findIndex(t=>t.endsWith('12:00')); if(idx<0)idx=Math.floor(h.time.length/2);
+  return {
+    temp:h.temperature_2m[idx], humidity:h.relative_humidity_2m[idx],
+    wind:h.wind_speed_10m[idx], windDir:h.wind_direction_10m[idx],
+    precip:h.precipitation[idx], time:h.time[idx]
+  };
+}
+function windCompass(deg){ if(deg==null)return''; const d=['N','NE','E','SE','S','SW','W','NW']; return d[Math.round(deg/45)%8]; }
+function fieldCentroid(name){ const f=FIELDS.features.find(x=>x.properties.name===name); return f?f.properties.centroid:null; }
 
 } // end initApp
 </script>
