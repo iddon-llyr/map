@@ -11,11 +11,12 @@
     --ink:#1c1f1a; --paper:#f6f4ee; --line:#d8d3c6;
     --green:#3f5d3a; --green-2:#56794f; --gold:#b8893b;
     --soil:#6b5640; --muted:#7a766c; --card:#fffdf8;
+    --blue:#16263f;
     --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
-  body{font-family:var(--sans);color:var(--ink);background:var(--paper);
+  body{font-family:var(--sans);color:var(--ink);background:var(--blue);
     display:flex;flex-direction:column;height:100vh;overflow:hidden}
   header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);
     display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
@@ -144,6 +145,30 @@
   .todo-item .tcat{font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:9px;background:var(--paper);color:var(--soil);margin-right:5px}
   .todo-item .tdel{background:none;border:none;color:#b44;cursor:pointer;font-size:.7rem;text-decoration:underline;flex:0 0 auto}
   .todo-empty{color:var(--muted);font-style:italic;font-size:.85rem;padding:14px 0;text-align:center}
+  .report-open{background:var(--green);color:#fff;border:none;padding:6px 12px;border-radius:8px;
+    font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-left:8px}
+  .report-open:hover{background:var(--green-2)}
+  .rtab{flex:1;background:none;border:none;padding:8px;font-family:inherit;font-size:.8rem;font-weight:600;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+  .rtab.active{color:var(--green);border-bottom-color:var(--green)}
+  .rep-note{font-size:.72rem;color:var(--muted);line-height:1.4;margin-top:12px;background:var(--paper);border-radius:6px;padding:8px 10px}
+  .rep-row{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 12px;font-size:.82rem;align-items:center;
+    padding:7px 8px;border-bottom:1px solid var(--line)}
+  .rep-row.head{font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;border-bottom:2px solid var(--line)}
+  .rep-row .nm{font-weight:600;color:var(--ink)}
+  .rep-row .num{text-align:right;font-variant-numeric:tabular-nums}
+  .rep-row .cost{color:var(--soil)}
+  .rep-row .out{color:var(--green)}
+  .rep-row .margin{font-weight:700}
+  .rep-row .margin.pos{color:#2f8a2f}.rep-row .margin.neg{color:#b85c5c}
+  .rep-total{margin-top:8px;padding:10px;background:var(--paper);border-radius:8px;font-size:.9rem;font-weight:700;
+    display:flex;justify-content:space-between}
+  .month-op{display:flex;gap:8px;padding:7px 8px;border-bottom:1px solid var(--line);font-size:.82rem;align-items:baseline}
+  .month-op .md{font-size:.72rem;color:var(--muted);white-space:nowrap;flex:0 0 auto;width:48px}
+  .month-op .mf{font-weight:600;flex:0 0 auto;width:90px}
+  .month-op .mt{flex:1;color:#444}
+  .month-head{font-size:.78rem;font-weight:700;color:var(--green);margin:12px 0 6px}
+  .month-empty{color:var(--muted);font-style:italic;font-size:.85rem;padding:14px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -152,6 +177,7 @@
   <span class="sub">Cofnod caeau · Field record</span>
   <span class="total" id="totalAc"></span>
   <button id="todoBtn" class="todo-open">📋 Tasgau · To-do <span id="todoCount" class="todo-count"></span></button>
+  <button id="reportBtn" class="report-open">📊 Adroddiadau · Reports</button>
   <span class="sync ro" id="syncStatus"><span class="dot"></span><span id="syncText">Darllen yn unig · Read-only</span>
     <button id="syncBtn">Mewngofnodi · Connect</button></span>
 </header>
@@ -265,6 +291,11 @@
       <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Gwerth £ · Value £</span>
         <input type="number" step="0.01" min="0" id="yldValue" placeholder="£"></div>
     </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Llwythi (amcan) · Loads (rough)</span>
+        <input type="number" step="1" min="0" id="yldLoads" placeholder="e.e. 3 trailers"></div>
+      <div style="flex:1"></div>
+    </div>
     <div style="font-size:.78rem;color:var(--green);margin-top:4px" id="yldCalc"></div>
   </div>
 
@@ -352,6 +383,34 @@
   </div>
   <div id="todoList"></div>
   <div class="modal-btns"><button class="cancel" id="todoClose">Cau · Close</button></div>
+</div></div>
+
+<div class="modal-bg" id="reportModal"><div class="modal" style="max-width:560px">
+  <h3>Adroddiadau · Reports</h3>
+  <div class="todo-tabs">
+    <button class="rtab active" data-rtab="margins">Mewnbwn/Allbwn · Inputs/Outputs</button>
+    <button class="rtab" data-rtab="monthly">Misol · Monthly</button>
+  </div>
+  <div id="rep-margins">
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:.74rem;color:var(--muted);font-weight:600">Hidlo · Filter:</span>
+      <select id="marginBy" style="flex:0 0 auto;width:auto">
+        <option value="field">Yn ôl cae · By field</option>
+        <option value="crop">Yn ôl cnwd · By crop</option>
+        <option value="total">Cyfanswm fferm · Farm total</option>
+      </select>
+    </div>
+    <div id="marginBody"></div>
+    <div class="rep-note">Costau o'r hyn rydych wedi logio; allbwn o werth cynhaeaf. Mae margin = allbwn − mewnbwn.<br>Costs from what you've logged; output from harvest value. Margin = output − inputs.</div>
+  </div>
+  <div id="rep-monthly" style="display:none">
+    <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+      <span style="font-size:.74rem;color:var(--muted);font-weight:600">Mis · Month:</span>
+      <input type="month" id="monthPick" style="flex:0 0 auto;width:auto">
+    </div>
+    <div id="monthlyBody"></div>
+  </div>
+  <div class="modal-btns"><button class="cancel" id="reportClose">Cau · Close</button></div>
 </div></div>
 
 <script>
@@ -694,6 +753,7 @@ function opYieldStr(o){
   const y=o.yield,parts=[];
   if(y.tonnes)parts.push(y.tonnes+' t'+(y.tha?' ('+y.tha+' t/ha)':''));
   if(y.bales)parts.push(y.bales+' byrnau/bales');
+  if(y.loads)parts.push(y.loads+' llwyth/loads (amcan)');
   if(y.value)parts.push('£'+y.value.toFixed(2));
   return parts.join(' · ');
 }
@@ -793,6 +853,7 @@ document.getElementById('addOp').onclick=()=>{
   document.getElementById('yldTonnes').value='';document.getElementById('yldBales').value='';
   document.getElementById('yldArea').value=fieldHa().toFixed(2);
   document.getElementById('yldValue').value='';
+  document.getElementById('yldLoads').value='';
   document.getElementById('costCalc').textContent='';
   document.getElementById('yldCalc').textContent='';
   ['drVariety','drRate','drLot','drTreat','spTarget','spHI','spCond'].forEach(id=>document.getElementById(id).value='');
@@ -822,12 +883,14 @@ document.getElementById('opSave').onclick=async()=>{
     const bales=parseFloat(document.getElementById('yldBales').value)||0;
     const area=parseFloat(document.getElementById('yldArea').value)||0;
     const value=parseFloat(document.getElementById('yldValue').value)||0;
-    if(t||bales||value){
+    const loads=parseFloat(document.getElementById('yldLoads').value)||0;
+    if(t||bales||value||loads){
       yield_={};
       if(t)yield_.tonnes=t;
       if(bales)yield_.bales=bales;
       if(area)yield_.area=area;
       if(value)yield_.value=value;
+      if(loads)yield_.loads=loads;
       if(t&&area)yield_.tha=+(t/area).toFixed(2);
     }
   }
@@ -964,6 +1027,93 @@ async function addTodo(){
 }
 document.getElementById('todoAdd').onclick=addTodo;
 document.getElementById('todoInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
+
+// ---- reports: margins + monthly ----
+function allOps(){
+  const rows=[];
+  Object.keys(store).forEach(fname=>{
+    if(fname.startsWith('_'))return;
+    const rec=store[fname]; if(!rec||!rec.ops)return;
+    rec.ops.forEach(o=>rows.push(Object.assign({field:fname,crop:(rec.crop||(CURRENT[fname]&&CURRENT[fname].crop)||'—')},o)));
+  });
+  return rows;
+}
+function opCost(o){ return (o.cost&&o.cost.total)?o.cost.total:0; }
+function opOut(o){ return (o.yield&&o.yield.value)?o.yield.value:0; }
+
+function renderMargins(){
+  const by=document.getElementById('marginBy').value;
+  const rows=allOps();
+  const body=document.getElementById('marginBody');
+  let groups={};
+  if(by==='total'){ groups={'Fferm gyfan · Whole farm':rows}; }
+  else {
+    rows.forEach(r=>{ const k=r[by]; (groups[k]=groups[k]||[]).push(r); });
+  }
+  const keys=Object.keys(groups).sort();
+  if(!keys.length){ body.innerHTML='<div class="month-empty">Dim data eto · No data logged yet</div>'; return; }
+  let totC=0,totO=0;
+  let html='<div class="rep-row head"><div>'+(by==='crop'?'Cnwd·Crop':by==='field'?'Cae·Field':'')+'</div>'+
+    '<div class="num">Mewnbwn·In</div><div class="num">Allbwn·Out</div><div class="num">Margin</div></div>';
+  keys.forEach(k=>{
+    const c=groups[k].reduce((s,o)=>s+opCost(o),0);
+    const ot=groups[k].reduce((s,o)=>s+opOut(o),0);
+    const m=ot-c; totC+=c; totO+=ot;
+    html+='<div class="rep-row"><div class="nm">'+esc(k)+'</div>'+
+      '<div class="num cost">£'+c.toFixed(0)+'</div>'+
+      '<div class="num out">£'+ot.toFixed(0)+'</div>'+
+      '<div class="num margin '+(m>=0?'pos':'neg')+'">£'+m.toFixed(0)+'</div></div>';
+  });
+  const tm=totO-totC;
+  html+='<div class="rep-total"><span>Cyfanswm · Total</span><span>In £'+totC.toFixed(0)+
+    ' · Out £'+totO.toFixed(0)+' · <span style="color:'+(tm>=0?'#2f8a2f':'#b85c5c')+'">Margin £'+tm.toFixed(0)+'</span></span></div>';
+  body.innerHTML=html;
+}
+
+function renderMonthly(){
+  const m=document.getElementById('monthPick').value; // yyyy-mm
+  const body=document.getElementById('monthlyBody');
+  if(!m){ body.innerHTML='<div class="month-empty">Dewiswch fis · Pick a month</div>'; return; }
+  const rows=allOps().filter(o=>(o.date||'').slice(0,7)===m)
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(!rows.length){ body.innerHTML='<div class="month-empty">Dim gweithredoedd y mis hwn · No operations this month</div>'; return; }
+  // summary counts
+  const counts={};
+  rows.forEach(o=>{ const k=o.type.split(' / ')[0]; counts[k]=(counts[k]||0)+1; });
+  let cost=rows.reduce((s,o)=>s+opCost(o),0), out=rows.reduce((s,o)=>s+opOut(o),0);
+  let html='<div class="month-head">Crynodeb · Summary</div>';
+  html+='<div style="font-size:.82rem;color:#444;margin-bottom:4px">'+
+    Object.entries(counts).map(([k,v])=>v+'× '+esc(k)).join(' · ')+'</div>';
+  html+='<div style="font-size:.82rem;color:var(--soil)">Costau·Costs: £'+cost.toFixed(0)+
+    (out?' · Allbwn·Output: £'+out.toFixed(0):'')+'</div>';
+  html+='<div class="month-head">Manylion · Detail</div>';
+  html+=rows.map(o=>{
+    const extra=[opDrillStr(o),opSprayStr(o),opCostStr(o),opYieldStr(o)].filter(Boolean).join(' · ');
+    return '<div class="month-op"><span class="md">'+fmtDate(o.date).slice(0,5)+'</span>'+
+      '<span class="mf">'+esc(o.field)+'</span>'+
+      '<span class="mt">'+esc(o.type.split(' / ')[0])+(o.product?' — '+esc(o.product):'')+
+      (extra?'<br><span style="color:#888;font-size:.74rem">'+esc(extra)+'</span>':'')+
+      (o.by?' <span style="color:#aaa">('+esc(o.by)+')</span>':'')+'</span></div>';
+  }).join('');
+  body.innerHTML=html;
+}
+
+document.getElementById('reportBtn').onclick=()=>{
+  if(!document.getElementById('monthPick').value)
+    document.getElementById('monthPick').value=new Date().toISOString().slice(0,7);
+  renderMargins(); renderMonthly();
+  document.getElementById('reportModal').classList.add('open');
+};
+document.getElementById('reportClose').onclick=()=>document.getElementById('reportModal').classList.remove('open');
+document.getElementById('reportModal').addEventListener('click',e=>{if(e.target.id==='reportModal')e.currentTarget.classList.remove('open')});
+document.getElementById('marginBy').onchange=renderMargins;
+document.getElementById('monthPick').onchange=renderMonthly;
+document.querySelectorAll('.rtab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('rep-margins').style.display=t.dataset.rtab==='margins'?'block':'none';
+  document.getElementById('rep-monthly').style.display=t.dataset.rtab==='monthly'?'block':'none';
+});
 
 } // end initApp
 </script>
