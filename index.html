@@ -8,10 +8,15 @@
   onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';">
 <style>
   :root{
-    --ink:#1c1f1a; --paper:#f6f4ee; --line:#d8d3c6;
-    --green:#3f5d3a; --green-2:#56794f; --gold:#b8893b;
-    --soil:#6b5640; --muted:#7a766c; --card:#fffdf8;
-    --blue:#16263f;
+    /* tywydd-style dark blue theme. Swap --blue/--blue-2 for exact tywydd values. */
+    --blue:#16263f;        /* page / panel background (PLACEHOLDER) */
+    --blue-2:#1e3350;      /* raised cards */
+    --blue-3:#27406180;    /* subtle fills */
+    --ink:#eaf1fb;         /* primary light text */
+    --paper:#1e3350;       /* was light; now raised surface */
+    --line:#33496b;        /* borders on dark */
+    --green:#6fbf5f; --green-2:#8ad07a; --gold:#e0a93c;
+    --soil:#d2a878; --muted:#9fb2cc; --card:#1a2c49;
     --sans:'Segoe UI',system-ui,-apple-system,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -39,7 +44,7 @@
   .panel-head h2{font-size:1.25rem;font-weight:600;color:var(--green)}
   .panel-head .acre{font-size:.8rem;color:var(--muted);margin-top:2px}
   .crop-row{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .crop-tag{background:var(--green);color:#fff;padding:3px 10px;border-radius:12px;
+  .crop-tag{background:var(--green);color:#0e2436;padding:3px 10px;border-radius:12px;
     font-size:.78rem;font-weight:600}
   .crop-tag.none{background:var(--line);color:var(--muted)}
   .crop-edit{font-size:.74rem;color:var(--gold);cursor:pointer;border:none;background:none;
@@ -52,21 +57,21 @@
   .op .op-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
   .op .op-type{font-weight:600;font-size:.86rem}
   .op .op-date{font-size:.74rem;color:var(--muted);white-space:nowrap}
-  .op .op-detail{font-size:.8rem;color:#444;margin-top:3px;line-height:1.4}
-  .op .op-del{color:#b44;border:none;background:none;cursor:pointer;
+  .op .op-detail{font-size:.8rem;color:#c3d2e8;margin-top:3px;line-height:1.4}
+  .op .op-del{color:#ff8a8a;border:none;background:none;cursor:pointer;
     font-size:.72rem;text-decoration:underline;padding:0;margin-top:4px}
   .op-type-badge{display:inline-block;width:8px;height:8px;border-radius:50%;
     margin-right:6px;vertical-align:middle}
   .empty-log{color:var(--muted);font-size:.85rem;font-style:italic}
   .panel-foot{border-top:1px solid var(--line);padding:12px 18px;background:var(--card)}
-  button.add{width:100%;background:var(--green);color:#fff;border:none;padding:10px;
-    border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer}
+  button.add{width:100%;background:var(--green);color:#0e2436;border:none;padding:10px;
+    border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer}
   button.add:hover{background:var(--green-2)}
   button.add:disabled{background:var(--line);color:var(--muted);cursor:not-allowed}
   .legend{position:absolute;bottom:16px;left:16px;z-index:500;background:var(--card);
     border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:.74rem;
     box-shadow:0 1px 4px rgba(0,0,0,.15)}
-  .legend div{display:flex;align-items:center;gap:6px;margin:2px 0;color:#444}
+  .legend div{display:flex;align-items:center;gap:6px;margin:2px 0;color:#c3d2e8}
   .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
   .modal-bg{position:fixed;inset:0;background:rgba(20,20,16,.45);z-index:1000;
     display:none;align-items:center;justify-content:center;padding:16px}
@@ -77,14 +82,15 @@
   .modal p.help{font-size:.82rem;color:var(--muted);line-height:1.5;margin-bottom:10px}
   label{display:block;font-size:.78rem;color:var(--muted);margin:10px 0 4px;font-weight:600}
   input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);
-    border-radius:6px;font-family:inherit;font-size:.9rem;background:#fff}
+    border-radius:6px;font-family:inherit;font-size:.9rem;background:#13243d;color:var(--ink)}
+  ::placeholder{color:#6f84a3}
   textarea{resize:vertical;min-height:54px}
   .modal-btns{display:flex;gap:8px;margin-top:18px}
   .modal-btns button{flex:1;padding:9px;border-radius:7px;font-size:.88rem;font-weight:600;
     cursor:pointer;border:1px solid var(--line)}
-  .modal-btns .save{background:var(--green);color:#fff;border-color:var(--green)}
-  .modal-btns .cancel{background:#fff;color:#555}
-  .modal-btns .danger{background:#fff;color:#b44;border-color:#e0b4b4;flex:0 0 auto;padding:9px 12px}
+  .modal-btns .save{background:var(--green);color:#0e2436;border-color:var(--green)}
+  .modal-btns .cancel{background:#13243d;color:var(--ink)}
+  .modal-btns .danger{background:#13243d;color:#ff8a8a;border-color:#7a3b3b;flex:0 0 auto;padding:9px 12px}
   #loadErr{display:none;position:absolute;inset:0;z-index:600;background:var(--paper);
     padding:30px;font-size:.95rem;color:var(--ink);line-height:1.6}
   @media(max-width:680px){
@@ -107,10 +113,10 @@
   .crank .cn{font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:6px}
   .crank .cr{font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1.35}
   .crank .badge{font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:10px;color:#fff}
-  .b-good{background:#3f9e3f}.b-ok{background:#c8902f}.b-poor{background:#b85c5c}
+  .b-good{background:#3f9e3f;color:#0e2436}.b-ok{background:#c8902f}.b-poor{background:#b85c5c}
   .crank .scorepill{flex:0 0 auto;font-weight:800;font-size:1.05rem;width:42px;text-align:center}
   .crank .novel{font-size:.6rem;background:var(--gold);color:#fff;padding:1px 5px;border-radius:8px}
-  .reason-good{color:#3f7a33}.reason-bad{color:#b85c5c}.reason-ok{color:#998433}
+  .reason-good{color:#7fd06a}.reason-bad{color:#b85c5c}.reason-ok{color:#d8c068}
   .soil-toggle,.st-btn{font-family:inherit}
   .soil-toggle{display:flex;gap:4px;margin-bottom:12px}
   .st-btn{flex:1;background:var(--paper);border:1px solid var(--line);padding:6px;border-radius:6px;
@@ -118,17 +124,17 @@
   .st-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
   .soil-grid{display:grid;grid-template-columns:1fr auto auto;gap:2px 10px;font-size:.8rem;align-items:center}
   .soil-grid .sh{font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
-  .soil-grid .nm{color:#444}
+  .soil-grid .nm{color:#c3d2e8}
   .soil-grid .val{font-weight:700;text-align:right}
   .soil-grid .idx{font-size:.72rem;color:var(--muted);text-align:right}
-  .soil-row-low .val{color:#b85c5c}.soil-row-high .val{color:#c8902f}
+  .soil-row-low .val{color:#ff9b9b}.soil-row-high .val{color:#e6b860}
   .soil-meta{font-size:.74rem;color:var(--muted);margin:10px 0;line-height:1.45}
-  .pred-chg{font-size:.74rem;color:var(--green);background:#eef5ec;border-radius:6px;padding:7px 9px;margin-bottom:10px;line-height:1.4}
+  .pred-chg{font-size:.74rem;color:var(--green);background:#1d3a2a;border-radius:6px;padding:7px 9px;margin-bottom:10px;line-height:1.4}
   .no-soil{font-size:.82rem;color:var(--muted);font-style:italic;line-height:1.5;padding:8px 0}
-  .todo-open{background:var(--gold);color:#fff;border:none;padding:6px 12px;border-radius:8px;
+  .todo-open{background:var(--gold);color:#2a1f08;border:none;padding:6px 12px;border-radius:8px;
     font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-left:8px}
   .todo-open:hover{background:#a5772f}
-  .todo-count{background:#fff;color:var(--gold);border-radius:10px;padding:0 6px;font-size:.72rem;margin-left:4px}
+  .todo-count{background:#13243d;color:var(--gold);border-radius:10px;padding:0 6px;font-size:.72rem;margin-left:4px}
   .todo-count:empty{display:none}
   .todo-tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:2px solid var(--line)}
   .ttab{flex:1;background:none;border:none;padding:8px;font-family:inherit;font-size:.82rem;font-weight:600;
@@ -143,9 +149,9 @@
   .todo-item .tt .meta{font-size:.7rem;color:var(--muted);margin-top:2px}
   .todo-item.done .tt{text-decoration:line-through;color:var(--muted)}
   .todo-item .tcat{font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:9px;background:var(--paper);color:var(--soil);margin-right:5px}
-  .todo-item .tdel{background:none;border:none;color:#b44;cursor:pointer;font-size:.7rem;text-decoration:underline;flex:0 0 auto}
+  .todo-item .tdel{background:none;border:none;color:#ff8a8a;cursor:pointer;font-size:.7rem;text-decoration:underline;flex:0 0 auto}
   .todo-empty{color:var(--muted);font-style:italic;font-size:.85rem;padding:14px 0;text-align:center}
-  .report-open{background:var(--green);color:#fff;border:none;padding:6px 12px;border-radius:8px;
+  .report-open{background:var(--green);color:#0e2436;border:none;padding:6px 12px;border-radius:8px;
     font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-left:8px}
   .report-open:hover{background:var(--green-2)}
   .rtab{flex:1;background:none;border:none;padding:8px;font-family:inherit;font-size:.8rem;font-weight:600;
@@ -160,13 +166,13 @@
   .rep-row .cost{color:var(--soil)}
   .rep-row .out{color:var(--green)}
   .rep-row .margin{font-weight:700}
-  .rep-row .margin.pos{color:#2f8a2f}.rep-row .margin.neg{color:#b85c5c}
+  .rep-row .margin.pos{color:#7fd06a}.rep-row .margin.neg{color:#ff9b9b}
   .rep-total{margin-top:8px;padding:10px;background:var(--paper);border-radius:8px;font-size:.9rem;font-weight:700;
     display:flex;justify-content:space-between}
   .month-op{display:flex;gap:8px;padding:7px 8px;border-bottom:1px solid var(--line);font-size:.82rem;align-items:baseline}
   .month-op .md{font-size:.72rem;color:var(--muted);white-space:nowrap;flex:0 0 auto;width:48px}
   .month-op .mf{font-weight:600;flex:0 0 auto;width:90px}
-  .month-op .mt{flex:1;color:#444}
+  .month-op .mt{flex:1;color:#c3d2e8}
   .month-head{font-size:.78rem;font-weight:700;color:var(--green);margin:12px 0 6px}
   .month-empty{color:var(--muted);font-style:italic;font-size:.85rem;padding:14px 0;text-align:center}
 </style>
@@ -202,7 +208,7 @@
           <span class="crop-tag none" id="cropTag">Dim cnwd / No crop</span>
           <button class="crop-edit" id="cropEdit">golygu / edit</button>
         </div>
-        <div id="fieldTotals" style="display:none;margin-top:10px;font-size:.8rem;color:#444;
+        <div id="fieldTotals" style="display:none;margin-top:10px;font-size:.8rem;color:#c3d2e8;
           background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 10px"></div>
       </div>
     </div>
@@ -549,7 +555,7 @@ function renderSoilTab(name){
   if(!sf){ body.innerHTML='<div class="no-soil">Dim dadansoddiad pridd ar gyfer y cae hwn.<br>No soil analysis on record for this field.<br><br>Argymhellir cymryd sampl.<br>A sample is recommended.</div>'; return; }
   const s=sf.soil;
   let head="";
-  if(sf.isProxy) head='<div class="pred-chg" style="background:#fbf2e0;color:#8a6d2f">Procsi: data '+sf.proxyOf+' (dim sampl i\'r cae hwn)<br>Proxy: '+sf.proxyOf+' data (no sample for this field)</div>';
+  if(sf.isProxy) head='<div class="pred-chg" style="background:#3a3320;color:#e0c98a">Procsi: data '+sf.proxyOf+' (dim sampl i\'r cae hwn)<br>Proxy: '+sf.proxyOf+' data (no sample for this field)</div>';
   else if(soilMode==="pred"){
     head = sf.changes.length
       ? '<div class="pred-chg"><b>Amcangyfrif</b> — Yara + newidiadau:<br>'+sf.changes.map(c=>'· '+c).join('<br>')+'<br><i>Cadarnhewch gyda sampl newydd.</i></div>'
@@ -780,12 +786,12 @@ function renderOps(name){
       '<span class="op-type"><span class="op-type-badge" style="background:'+c+'"></span>'+esc(o.type)+'</span>'+
       '<span class="op-date">'+fmtDate(o.date)+'</span></div>'+
       (o.product?'<div class="op-detail">'+esc(o.product)+'</div>':'')+
-      (drl?'<div class="op-detail" style="color:#5a6e3a">🌱 '+esc(drl)+'</div>':'')+
-      (spr?'<div class="op-detail" style="color:#7b5ea7">💧 '+esc(spr)+'</div>':'')+
+      (drl?'<div class="op-detail" style="color:#a8c98a">🌱 '+esc(drl)+'</div>':'')+
+      (spr?'<div class="op-detail" style="color:#b9a3e0">💧 '+esc(spr)+'</div>':'')+
       (cost?'<div class="op-detail" style="color:var(--soil);font-weight:600">'+cost+'</div>':'')+
       (yld?'<div class="op-detail" style="color:var(--green);font-weight:600">⛁ '+yld+'</div>':'')+
-      (o.notes?'<div class="op-detail" style="color:#777">'+esc(o.notes)+'</div>':'')+
-      (o.by?'<div class="op-detail" style="color:#999;font-size:.72rem">— '+esc(o.by)+'</div>':'')+
+      (o.notes?'<div class="op-detail" style="color:#9fb2cc">'+esc(o.notes)+'</div>':'')+
+      (o.by?'<div class="op-detail" style="color:#7f93af;font-size:.72rem">— '+esc(o.by)+'</div>':'')+
       '<button class="op-del" data-id="'+o.id+'">dileu · delete</button></div>';
   }).join('');
   list.querySelectorAll('.op-del').forEach(b=>b.onclick=async()=>{
@@ -1082,7 +1088,7 @@ function renderMonthly(){
   rows.forEach(o=>{ const k=o.type.split(' / ')[0]; counts[k]=(counts[k]||0)+1; });
   let cost=rows.reduce((s,o)=>s+opCost(o),0), out=rows.reduce((s,o)=>s+opOut(o),0);
   let html='<div class="month-head">Crynodeb · Summary</div>';
-  html+='<div style="font-size:.82rem;color:#444;margin-bottom:4px">'+
+  html+='<div style="font-size:.82rem;color:#c3d2e8;margin-bottom:4px">'+
     Object.entries(counts).map(([k,v])=>v+'× '+esc(k)).join(' · ')+'</div>';
   html+='<div style="font-size:.82rem;color:var(--soil)">Costau·Costs: £'+cost.toFixed(0)+
     (out?' · Allbwn·Output: £'+out.toFixed(0):'')+'</div>';
@@ -1092,8 +1098,8 @@ function renderMonthly(){
     return '<div class="month-op"><span class="md">'+fmtDate(o.date).slice(0,5)+'</span>'+
       '<span class="mf">'+esc(o.field)+'</span>'+
       '<span class="mt">'+esc(o.type.split(' / ')[0])+(o.product?' — '+esc(o.product):'')+
-      (extra?'<br><span style="color:#888;font-size:.74rem">'+esc(extra)+'</span>':'')+
-      (o.by?' <span style="color:#aaa">('+esc(o.by)+')</span>':'')+'</span></div>';
+      (extra?'<br><span style="color:#8fa2bd;font-size:.74rem">'+esc(extra)+'</span>':'')+
+      (o.by?' <span style="color:#7f93af">('+esc(o.by)+')</span>':'')+'</span></div>';
   }).join('');
   body.innerHTML=html;
 }
