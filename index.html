@@ -60,6 +60,8 @@
   .op .op-detail{font-size:.8rem;color:#c3d2e8;margin-top:3px;line-height:1.4}
   .op .op-del{color:#ff8a8a;border:none;background:none;cursor:pointer;
     font-size:.72rem;text-decoration:underline;padding:0;margin-top:4px}
+  .op .op-edit{color:var(--gold);border:none;background:none;cursor:pointer;
+    font-size:.72rem;text-decoration:underline;padding:0;margin-top:4px;margin-right:10px}
   .op-type-badge{display:inline-block;width:8px;height:8px;border-radius:50%;
     margin-right:6px;vertical-align:middle}
   .empty-log{color:var(--muted);font-size:.85rem;font-style:italic}
@@ -95,10 +97,33 @@
     padding:30px;font-size:.95rem;color:var(--ink);line-height:1.6}
   @media(max-width:680px){
     .wrap{flex-direction:column}
-    aside{width:100%;max-width:none;height:46%;border-left:none;border-top:1px solid var(--line)}
-    #map{height:54%}
-    header .total{order:3;margin-left:0}
+    #map{height:42%;min-height:200px}
+    aside{width:100%;max-width:none;height:58%;border-left:none;border-top:2px solid var(--gold)}
+    header{padding:10px 14px;gap:8px}
+    header h1{font-size:1.05rem;width:100%}
+    header .sub{display:none}
+    header .total{order:5;font-size:.72rem}
+    /* header action buttons: compact, wrap */
+    .todo-open,.report-open{margin-left:0;padding:7px 10px;font-size:.76rem}
+    /* pinned add-operation button at TOP of panel on mobile */
+    .panel-foot{order:-1;border-top:none;border-bottom:1px solid var(--line);padding:10px 14px}
+    aside.empty .panel-foot{display:none}
+    .panel-body{padding:12px 14px}
+    button.add{padding:15px;font-size:1rem;border-radius:10px}
+    /* bigger touch targets */
+    .tab{padding:12px 4px;font-size:.85rem}
+    .op{padding:11px 12px}
+    .op .op-edit,.op .op-del{font-size:.82rem;padding:4px 0}
+    input,select,textarea{padding:11px 12px;font-size:16px}
+    .modal{padding:16px;max-height:92vh}
+    .modal-btns button{padding:13px;font-size:.95rem}
+    .crank{padding:11px}
+    /* field name labels a touch bigger on map */
+    .fieldlabel{font-size:.8rem !important}
   }
+  /* flexbox order: on mobile the panel-foot (add button) sits above body */
+  aside{display:flex;flex-direction:column}
+  .panel-head{order:0}.panel-foot{order:2}.panel-body{order:1;flex:1}
   .tabbar{display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid var(--line)}
   .tab{flex:1;background:none;border:none;padding:8px 4px;font-family:inherit;font-size:.8rem;
     font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
@@ -275,7 +300,11 @@
     <option value="Cynaeafu / Harvest">Cynaeafu · Harvest</option>
     <option value="Arall / Other">Arall · Other</option>
   </select>
-  <label>Dyddiad · Date</label><input type="date" id="opDate">
+  <label>Dyddiad ac amser · Date &amp; time</label>
+  <div style="display:flex;gap:8px">
+    <input type="date" id="opDate" style="flex:1.4">
+    <input type="time" id="opTime" style="flex:1" title="Amser y gwaith · Time of operation">
+  </div>
   <label>Cynnyrch / cyfradd · Product / rate <span style="font-weight:400">(dewisol)</span></label>
   <input type="text" id="opProduct" placeholder="e.e. Aviator 235 Xpro @ 1.0 l/ha">
   <label>Nodiadau · Notes <span style="font-weight:400">(dewisol)</span></label>
@@ -773,6 +802,13 @@ function selectField(name){
   }
   renderCrop(name);renderOps(name);
   renderCropsTab(name);renderSoilTab(name);
+  // mobile: make the add-operation path immediate — reset to Log tab, bring panel into view
+  if(window.innerWidth<=680){
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='ops'));
+    document.querySelectorAll('.tabpane').forEach(x=>x.classList.toggle('active',x.id==='tab-ops'));
+    const aside=document.getElementById('panel');
+    if(aside)aside.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
 }
 function renderCrop(name){
   const rec=store[name]||{},tag=document.getElementById('cropTag');
@@ -827,7 +863,7 @@ function renderOps(name){
     const cost=opCostStr(o),yld=opYieldStr(o),drl=opDrillStr(o),spr=opSprayStr(o);
     return '<div class="op"><div class="op-top">'+
       '<span class="op-type"><span class="op-type-badge" style="background:'+c+'"></span>'+esc(o.type)+'</span>'+
-      '<span class="op-date">'+fmtDate(o.date)+'</span></div>'+
+      '<span class="op-date">'+fmtDate(o.date)+(o.time?' '+o.time:'')+'</span></div>'+
       (o.product?'<div class="op-detail">'+esc(o.product)+'</div>':'')+
       (drl?'<div class="op-detail" style="color:#a8c98a">🌱 '+esc(drl)+'</div>':'')+
       (spr?'<div class="op-detail" style="color:#b9a3e0">💧 '+esc(spr)+'</div>':'')+
@@ -837,8 +873,12 @@ function renderOps(name){
       (yld?'<div class="op-detail" style="color:var(--green);font-weight:600">⛁ '+yld+'</div>':'')+
       (o.notes?'<div class="op-detail" style="color:#9fb2cc">'+esc(o.notes)+'</div>':'')+
       (o.by?'<div class="op-detail" style="color:#7f93af;font-size:.72rem">— '+esc(o.by)+'</div>':'')+
-      '<button class="op-del" data-id="'+o.id+'">dileu · delete</button></div>';
+      '<button class="op-edit" data-edit="'+o.id+'">golygu · edit</button> <button class="op-del" data-id="'+o.id+'">dileu · delete</button></div>';
   }).join('');
+  list.querySelectorAll('.op-edit').forEach(b=>b.onclick=()=>{
+    const op=(store[name].ops||[]).find(x=>x.id==b.dataset.edit);
+    if(op)openOpModal(op);
+  });
   list.querySelectorAll('.op-del').forEach(b=>b.onclick=async()=>{
     if(confirm('Dileu y gweithred hwn? · Delete this operation?')){
       store[name].ops=store[name].ops.filter(x=>x.id!=b.dataset.id);
@@ -850,7 +890,7 @@ function renderOps(name){
     b.textContent='⏳ ...';
     const c=fieldCentroid(name);
     try{
-      const w=await fetchWeather(c[1],c[0],op.date);
+      const w=await fetchWeather(c[1],c[0],op.date,op.time);
       op.weather=w; await commit(); renderOps(name);
     }catch(e){ b.textContent='⚠ methu / failed'; }
   });
@@ -859,9 +899,14 @@ function wxStr(w){
   const p=[];
   if(w.temp!=null)p.push(w.temp+'°C');
   if(w.humidity!=null)p.push(w.humidity+'% RH');
-  if(w.wind!=null)p.push(w.wind+' km/h '+windCompass(w.windDir));
+  if(w.wind!=null){
+    const k10=w.wind, m10=kmhToMph(k10), kb=boomWind(k10), mb=kmhToMph(kb);
+    p.push('gwynt/wind '+m10.toFixed(0)+' mph ('+k10.toFixed(0)+' km/h) @10m '+windCompass(w.windDir)+
+      ' · ≈'+mb.toFixed(0)+' mph ('+kb.toFixed(0)+' km/h) @boom');
+  }
   if(w.precip!=null&&w.precip>0)p.push(w.precip+'mm glaw/rain');
-  return p.join(' · ')+' <span style="color:var(--muted);font-size:.66rem">(amcan/modelled)</span>';
+  const at = w.time ? ' <span style="color:var(--muted);font-size:.66rem">('+w.time.slice(11,16)+', amcan/modelled)</span>' : ' <span style="color:var(--muted);font-size:.66rem">(amcan/modelled)</span>';
+  return p.join(' · ')+at;
 }
 function refreshAll(){
   gj.setStyle(f=>fieldStyle(f.properties.name));
@@ -910,27 +955,53 @@ document.getElementById('opType').onchange=syncYieldVis;
 document.getElementById('yldTonnes').oninput=calcYield;
 document.getElementById('yldArea').oninput=calcYield;
 
-document.getElementById('addOp').onclick=()=>{
+let editingOpId=null;
+function openOpModal(existing){
   if(!selected)return;
-  document.getElementById('opType').value='Drilio / Drilling';
-  document.getElementById('opDate').value=new Date().toISOString().slice(0,10);
-  document.getElementById('opProduct').value='';document.getElementById('opNotes').value='';
-  document.getElementById('costMode').value='total';
-  document.getElementById('costTotal').value='';
-  document.getElementById('costRate').value='';
-  document.getElementById('costArea').value=fieldHa().toFixed(2);
-  document.getElementById('yldTonnes').value='';document.getElementById('yldBales').value='';
-  document.getElementById('yldArea').value=fieldHa().toFixed(2);
-  document.getElementById('yldValue').value='';
-  document.getElementById('yldLoads').value='';
+  editingOpId = existing ? existing.id : null;
+  const o = existing || {};
+  document.getElementById('opModalTitle').textContent = existing ? 'Golygu gweithred · Edit operation' : 'Ychwanegu gweithred · Add operation';
+  document.getElementById('opType').value=o.type||'Drilio / Drilling';
+  document.getElementById('opDate').value=o.date||new Date().toISOString().slice(0,10);
+  document.getElementById('opTime').value=o.time||new Date().toTimeString().slice(0,5);
+  document.getElementById('opProduct').value=o.product||'';
+  document.getElementById('opNotes').value=o.notes||'';
+  // cost
+  if(o.cost&&o.cost.mode==='rate'){
+    document.getElementById('costMode').value='rate';
+    document.getElementById('costTotal').value='';
+    document.getElementById('costRate').value=o.cost.rate||'';
+    document.getElementById('costArea').value=o.cost.area||fieldHa().toFixed(2);
+  }else{
+    document.getElementById('costMode').value='total';
+    document.getElementById('costTotal').value=(o.cost&&o.cost.total)||'';
+    document.getElementById('costRate').value='';
+    document.getElementById('costArea').value=fieldHa().toFixed(2);
+  }
+  // yield
+  const y=o.yield||{};
+  document.getElementById('yldTonnes').value=y.tonnes||'';
+  document.getElementById('yldBales').value=y.bales||'';
+  document.getElementById('yldArea').value=y.area||fieldHa().toFixed(2);
+  document.getElementById('yldValue').value=y.value||'';
+  document.getElementById('yldLoads').value=y.loads||'';
+  // drill / spray
+  const d=o.drill||{}, s=o.spray||{};
+  document.getElementById('drVariety').value=d.variety||'';
+  document.getElementById('drRate').value=d.rate||'';
+  document.getElementById('drLot').value=d.lot||'';
+  document.getElementById('drTreat').value=d.treatment||'';
+  document.getElementById('spTarget').value=s.target||'';
+  document.getElementById('spHI').value=s.hi||'';
+  document.getElementById('spOperator').value=s.operator||author||'';
+  document.getElementById('spCond').value=s.conditions||'';
   document.getElementById('costCalc').textContent='';
   document.getElementById('yldCalc').textContent='';
-  ['drVariety','drRate','drLot','drTreat','spTarget','spHI','spCond'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('spOperator').value=author||'';
   syncCostMode();syncYieldVis();
   opModal.classList.add('open');
-};
-document.getElementById('opCancel').onclick=()=>opModal.classList.remove('open');
+}
+document.getElementById('addOp').onclick=()=>openOpModal(null);
+document.getElementById('opCancel').onclick=()=>{editingOpId=null;opModal.classList.remove('open');};
 document.getElementById('opSave').onclick=async()=>{
   if(!selected)return;
   const type=document.getElementById('opType').value;
@@ -977,18 +1048,28 @@ document.getElementById('opSave').onclick=async()=>{
   }
   const op={id:Date.now()+''+Math.floor(Math.random()*999),
     type,date:document.getElementById('opDate').value,
+    time:document.getElementById('opTime').value,
     product:document.getElementById('opProduct').value.trim(),
     notes:document.getElementById('opNotes').value.trim(),
     cost,yield:yield_,drill,spray,by:author||''};
   if(!store[selected])store[selected]={};
   if(!store[selected].ops)store[selected].ops=[];
-  store[selected].ops.push(op);
+  if(editingOpId){
+    const arr=store[selected].ops, i=arr.findIndex(x=>x.id==editingOpId);
+    if(i>=0){ op.id=editingOpId; op.by=arr[i].by||author||''; op.weather=arr[i].weather||null;
+      // if date/time changed on a spray, clear stale weather so it re-fetches
+      if(isSpray(type) && (arr[i].date!==op.date || arr[i].time!==op.time)) op.weather=null;
+      arr[i]=op; }
+  }else{
+    store[selected].ops.push(op);
+  }
+  const wasEditing=!!editingOpId; editingOpId=null;
   opModal.classList.remove('open');
   await commit();renderOps(selected);
-  // auto-fetch weather for sprays (best-effort, non-blocking)
-  if(isSpray(type)&&op.date){
+  // auto-fetch weather for sprays if none yet (best-effort, non-blocking)
+  if(isSpray(type)&&op.date&&!op.weather){
     const c=fieldCentroid(selected);
-    if(c){ try{ const w=await fetchWeather(c[1],c[0],op.date); op.weather=w; await commit(); renderOps(selected); }catch(e){/* leave manual button */} }
+    if(c){ try{ const w=await fetchWeather(c[1],c[0],op.date,op.time); op.weather=w; await commit(); renderOps(selected); }catch(e){/* leave manual button */} }
   }
 };
 
@@ -1279,8 +1360,8 @@ document.getElementById('repairClose').onclick=()=>document.getElementById('repa
 document.getElementById('repairModal').addEventListener('click',e=>{if(e.target.id==='repairModal')e.currentTarget.classList.remove('open')});
 
 // ---- historical weather (Open-Meteo, free, no key) ----
-async function fetchWeather(lat,lng,dateStr){
-  // dateStr yyyy-mm-dd; fetch hourly, return midday-ish snapshot
+async function fetchWeather(lat,lng,dateStr,timeStr){
+  // dateStr yyyy-mm-dd; timeStr HH:MM (optional). Returns the closest hour.
   const url='https://archive-api.open-meteo.com/v1/archive?latitude='+lat.toFixed(4)+
     '&longitude='+lng.toFixed(4)+'&start_date='+dateStr+'&end_date='+dateStr+
     '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation&timezone=Europe%2FLondon';
@@ -1288,14 +1369,22 @@ async function fetchWeather(lat,lng,dateStr){
   if(!r.ok) throw new Error('weather HTTP '+r.status);
   const j=await r.json();
   const h=j.hourly; if(!h||!h.time) throw new Error('no data');
-  // pick 12:00 if available, else midpoint
-  let idx=h.time.findIndex(t=>t.endsWith('12:00')); if(idx<0)idx=Math.floor(h.time.length/2);
+  // pick the hour matching timeStr, else midday, else midpoint
+  let idx=-1;
+  if(timeStr){ const hh=timeStr.slice(0,2); idx=h.time.findIndex(t=>t.slice(11,13)===hh); }
+  if(idx<0) idx=h.time.findIndex(t=>t.endsWith('12:00'));
+  if(idx<0) idx=Math.floor(h.time.length/2);
+  const wind10=h.wind_speed_10m[idx]; // km/h
   return {
     temp:h.temperature_2m[idx], humidity:h.relative_humidity_2m[idx],
-    wind:h.wind_speed_10m[idx], windDir:h.wind_direction_10m[idx],
+    wind:wind10, windDir:h.wind_direction_10m[idx],
     precip:h.precipitation[idx], time:h.time[idx]
   };
 }
+// wind conversions & boom-height estimate
+function kmhToMph(k){ return k*0.621371; }
+// log wind profile: reduce 10m wind to ~1m boom height (open terrain, z0~0.03m)
+function boomWind(w10){ return w10 * (Math.log(1/0.03)/Math.log(10/0.03)); } // ~0.63×
 function windCompass(deg){ if(deg==null)return''; const d=['N','NE','E','SE','S','SW','W','NW']; return d[Math.round(deg/45)%8]; }
 function fieldCentroid(name){ const f=FIELDS.features.find(x=>x.properties.name===name); return f?f.properties.centroid:null; }
 
