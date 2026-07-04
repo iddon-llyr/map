@@ -22,7 +22,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{font-family:var(--sans);color:var(--ink);background:var(--blue);
-    display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
   header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);
     display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
   header h1{font-size:1.15rem;font-weight:600;letter-spacing:.2px}
@@ -96,29 +96,28 @@
   #loadErr{display:none;position:absolute;inset:0;z-index:600;background:var(--paper);
     padding:30px;font-size:.95rem;color:var(--ink);line-height:1.6}
   @media(max-width:680px){
-    .wrap{flex-direction:column}
-    #map{height:42%;min-height:200px}
-    aside{width:100%;max-width:none;height:58%;border-left:none;border-top:2px solid var(--gold)}
-    header{padding:10px 14px;gap:8px}
+    /* let the whole page scroll naturally instead of locking to viewport */
+    body{height:auto;min-height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .wrap{flex-direction:column;flex:none}
+    #map{height:52vh;min-height:240px;flex:none}
+    aside{width:100%;max-width:none;height:auto;flex:none;border-left:none;border-top:2px solid var(--gold);overflow:visible}
+    .panel-body{overflow:visible}
+    header{padding:10px 14px;gap:8px;position:sticky;top:0;z-index:800}
     header h1{font-size:1.05rem;width:100%}
     header .sub{display:none}
     header .total{order:5;font-size:.72rem}
-    /* header action buttons: compact, wrap */
     .todo-open,.report-open{margin-left:0;padding:7px 10px;font-size:.76rem}
-    /* pinned add-operation button at TOP of panel on mobile */
-    .panel-foot{order:-1;border-top:none;border-bottom:1px solid var(--line);padding:10px 14px}
+    .panel-foot{order:-1;border-top:none;border-bottom:1px solid var(--line);padding:10px 14px;position:sticky;top:52px;z-index:1;background:var(--card)}
     aside.empty .panel-foot{display:none}
     .panel-body{padding:12px 14px}
     button.add{padding:15px;font-size:1rem;border-radius:10px}
-    /* bigger touch targets */
     .tab{padding:12px 4px;font-size:.85rem}
     .op{padding:11px 12px}
     .op .op-edit,.op .op-del{font-size:.82rem;padding:4px 0}
     input,select,textarea{padding:11px 12px;font-size:16px}
-    .modal{padding:16px;max-height:92vh}
+    .modal{padding:16px;max-height:88dvh}
     .modal-btns button{padding:13px;font-size:.95rem}
     .crank{padding:11px}
-    /* field name labels a touch bigger on map */
     .fieldlabel{font-size:.8rem !important}
   }
   /* flexbox order: on mobile the panel-foot (add button) sits above body */
