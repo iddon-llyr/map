@@ -217,6 +217,19 @@
   .place-hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:700;
     background:var(--gold);color:#2a1f08;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600;
     box-shadow:0 2px 8px rgba(0,0,0,.4);display:none}
+  .stab{flex:1;background:none;border:none;padding:8px 4px;font-family:inherit;font-size:.78rem;font-weight:600;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+  .stab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  .atab{flex:1;background:none;border:none;padding:8px 4px;font-family:inherit;font-size:.8rem;font-weight:600;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+  .atab.active{color:var(--soil);border-bottom-color:var(--soil)}
+  .buyer-card{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  .buyer-card .bn{font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;align-items:baseline}
+  .buyer-card .bc{font-size:.76rem;color:var(--muted);margin-top:2px}
+  .buyer-card .bh{font-size:.78rem;color:#c3d2e8;margin-top:6px;border-top:1px solid var(--line);padding-top:6px}
+  .buyer-card .bh div{padding:2px 0}
+  .buyer-card .btot{color:var(--gold);font-weight:700}
+  .op .op-sale{color:#e6c34a;font-weight:600}
 </style>
 </head>
 <body>
@@ -227,6 +240,7 @@
   <button id="todoBtn" class="todo-open">📋 Tasgau · To-do <span id="todoCount" class="todo-count"></span></button>
   <button id="reportBtn" class="report-open">📊 Adroddiadau · Reports</button>
   <button id="assetBtn" class="report-open" style="background:var(--soil);color:#1a1206">🚜 Peiriannau · Assets</button>
+  <button id="sellBtn" class="report-open" style="background:var(--gold);color:#2a1f08">💷 Gwerthu · Sell</button>
   <span class="sync ro" id="syncStatus"><span class="dot"></span><span id="syncText">Darllen yn unig · Read-only</span>
     <button id="syncBtn">Mewngofnodi · Connect</button></span>
 </header>
@@ -297,6 +311,8 @@
     <option value="Calch / Lime">Calch · Lime</option>
     <option value="Triniaeth tir / Cultivation">Triniaeth tir · Cultivation</option>
     <option value="Cynaeafu / Harvest">Cynaeafu · Harvest</option>
+    <option value="Contractwr / Contractor">Contractwr · Contractor</option>
+    <option value="Gwerthiant / Sale">Gwerthiant · Sale</option>
     <option value="Arall / Other">Arall · Other</option>
   </select>
   <label>Dyddiad ac amser · Date &amp; time</label>
@@ -315,6 +331,7 @@
     <select id="costMode" style="flex:0 0 auto;width:auto">
       <option value="total">Cyfanswm £ · Total £</option>
       <option value="rate">Cyfradd × arwynebedd · Rate × area</option>
+      <option value="unit">Fesul uned · Per unit (e.g. per bale)</option>
     </select>
   </div>
   <div id="costTotalWrap">
@@ -328,6 +345,15 @@
         <input type="number" step="0.01" min="0" id="costArea" placeholder="ha"></div>
     </div>
     <div style="font-size:.78rem;color:var(--green);margin-top:4px" id="costCalc"></div>
+  </div>
+  <div id="costUnitWrap" style="display:none">
+    <div style="display:flex;gap:8px">
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Nifer · Units (e.e. bales)</span>
+        <input type="number" step="1" min="0" id="costUnits" placeholder="e.e. 40"></div>
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">£ yr uned · £ per unit</span>
+        <input type="number" step="0.01" min="0" id="costPerUnit" placeholder="£/bale"></div>
+    </div>
+    <div style="font-size:.78rem;color:var(--green);margin-top:4px" id="costUnitCalc"></div>
   </div>
 
   <div id="yieldSection" style="display:none">
@@ -385,6 +411,25 @@
       <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Amodau · Conditions</span>
         <input type="text" id="spCond" placeholder="e.e. dry, light wind"></div>
     </div>
+  </div>
+
+  <div id="contractorSection" style="display:none">
+    <div style="border-top:1px solid var(--line);margin:14px 0 0"></div>
+    <label>Manylion contractwr · Contractor details</label>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Enw · Name</span>
+        <input type="text" id="ctName" placeholder="e.e. Martin" list="contractorList">
+        <datalist id="contractorList"></datalist></div>
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Ffôn · Phone</span>
+        <input type="tel" id="ctPhone" placeholder="rhif ffôn"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Gwaith · Task</span>
+        <input type="text" id="ctTask" placeholder="e.e. Byrnu · Baling"></div>
+      <div style="flex:1"><span style="font-size:.72rem;color:var(--muted)">Statws talu · Paid?</span>
+        <select id="ctPaid"><option value="due">I'w dalu · Owed</option><option value="paid">Wedi talu · Paid</option></select></div>
+    </div>
+    <div style="font-size:.7rem;color:var(--muted);margin-top:5px">Defnyddiwch "Fesul uned" yn y gost uchod ar gyfer £ y fyrnen · Use "Per unit" in Cost above for £/bale</div>
   </div>
 
   <div class="modal-btns">
@@ -468,14 +513,21 @@
 </div></div>
 
 <div class="modal-bg" id="assetModal"><div class="modal" style="max-width:520px">
-  <h3>Peiriannau ac asedion · Machinery &amp; assets</h3>
-  <div id="assetAddRow" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-    <input type="text" id="asName" placeholder="Peiriant · Machine (e.e. Valtra T151)" style="flex:1 1 100%">
-    <input type="text" id="asHours" placeholder="Oriau · Hours" style="flex:1">
-    <input type="text" id="asReg" placeholder="Reg / ID (dewisol)" style="flex:1">
-    <button class="save" id="asAdd" style="flex:0 0 auto;padding:8px 14px">+</button>
+  <h3>Peiriannau a chontractwyr · Machinery &amp; contractors</h3>
+  <div class="todo-tabs">
+    <button class="atab active" data-atab="machines">Peiriannau · Machines</button>
+    <button class="atab" data-atab="contractors">Contractwyr · Contractors</button>
   </div>
-  <div id="assetList"></div>
+  <div id="asset-machines">
+    <div id="assetAddRow" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      <input type="text" id="asName" placeholder="Peiriant · Machine (e.e. Valtra T151)" style="flex:1 1 100%">
+      <input type="text" id="asHours" placeholder="Oriau · Hours" style="flex:1">
+      <input type="text" id="asReg" placeholder="Reg / ID (dewisol)" style="flex:1">
+      <button class="save" id="asAdd" style="flex:0 0 auto;padding:8px 14px">+</button>
+    </div>
+    <div id="assetList"></div>
+  </div>
+  <div id="asset-contractors" style="display:none"><div id="contractorBody"></div></div>
   <div class="modal-btns"><button class="cancel" id="assetClose">Cau · Close</button></div>
 </div></div>
 
@@ -488,6 +540,55 @@
   </div>
   <div id="repairList"></div>
   <div class="modal-btns"><button class="cancel" id="repairClose">Cau · Close</button></div>
+</div></div>
+
+<div class="modal-bg" id="sellModal"><div class="modal" style="max-width:560px">
+  <h3 id="sellTitle">Gwerthu · Sell</h3>
+  <div class="todo-tabs">
+    <button class="stab active" data-stab="new">Gwerthiant newydd · New sale</button>
+    <button class="stab" data-stab="buyers">Prynwyr · Buyers</button>
+    <button class="stab" data-stab="totals">Cyfansymiau · Totals</button>
+  </div>
+
+  <div id="sell-new">
+    <label>Prynwr · Buyer</label>
+    <input type="text" id="slBuyer" placeholder="Enw · Name" list="buyerList">
+    <datalist id="buyerList"></datalist>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1"><label>Ffôn · Phone</label><input type="tel" id="slPhone" placeholder="Rhif ffôn"></div>
+      <div style="flex:1"><label>Cyswllt arall · Other contact</label><input type="text" id="slContact" placeholder="e-bost / cyfeiriad"></div>
+    </div>
+    <label>Cae · Field</label>
+    <select id="slField"></select>
+    <div style="display:flex;gap:8px">
+      <div style="flex:2"><label>Beth · Item</label><input type="text" id="slItem" placeholder="e.e. Byrnau silwair · Silage bales"></div>
+      <div style="flex:1"><label>Faint · Qty</label><input type="text" id="slQty" placeholder="e.e. 20"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1"><label>Pris (£) · Price</label><input type="number" step="0.01" min="0" id="slPrice" placeholder="cyfanswm £ · total £"></div>
+      <div style="flex:1"><label>Dyddiad · Date</label><input type="date" id="slDate"></div>
+    </div>
+    <label>Nodiadau · Notes <span style="font-weight:400">(dewisol)</span></label>
+    <input type="text" id="slNotes" placeholder="e.e. paid cash, collecting Friday">
+    <div class="modal-btns">
+      <button class="cancel" id="sellCancel">Canslo</button>
+      <button class="save" id="sellSave">Cadw gwerthiant · Save sale</button>
+    </div>
+  </div>
+
+  <div id="sell-buyers" style="display:none"><div id="buyersBody"></div></div>
+  <div id="sell-totals" style="display:none">
+    <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:.74rem;color:var(--muted);font-weight:600">Yn ôl · By:</span>
+      <select id="sellTotalBy" style="flex:0 0 auto;width:auto">
+        <option value="buyer">Prynwr · Buyer</option>
+        <option value="field">Cae · Field</option>
+        <option value="item">Eitem · Item</option>
+      </select>
+    </div>
+    <div id="totalsBody"></div>
+  </div>
+  <div class="modal-btns" id="sellCloseRow" style="display:none"><button class="cancel" id="sellClose">Cau · Close</button></div>
 </div></div>
 
 <script>
@@ -658,7 +759,7 @@ function renderSoilTab(name){
 const TYPE_COLOURS = {
   'Drilio':'#3f5d3a','Chwynladdwr':'#c0762f','Ffwngladdwr':'#7b5ea7',
   'Pryfleiddiad':'#c14b4b','Gwrtaith':'#2f7fb8','Calch':'#9a9486',
-  'Triniaeth':'#6b5640','Cynaeafu':'#b8893b','Arall':'#7a766c'
+  'Triniaeth':'#6b5640','Cynaeafu':'#b8893b','Gwerthiant':'#d4a017','Arall':'#7a766c'
 };
 function typeColour(t){const k=Object.keys(TYPE_COLOURS).find(k=>t.includes(k));return TYPE_COLOURS[k]||'#7a766c';}
 
@@ -860,10 +961,19 @@ function renderOps(name){
   list.innerHTML=ops.map(o=>{
     const c=typeColour(o.type);
     const cost=opCostStr(o),yld=opYieldStr(o),drl=opDrillStr(o),spr=opSprayStr(o);
+    const saleStr = o.sale ? ('💷 '+esc(o.sale.buyer||'—')+(o.sale.item?' · '+esc(o.sale.item):'')+
+      (o.sale.qty?' ×'+esc(o.sale.qty):'')+((o.yield&&o.yield.value)?' · £'+o.yield.value.toFixed(0):'')+
+      (o.sale.phone?' · 📞'+esc(o.sale.phone):'')) : '';
+    const ctStr = o.contractor ? ('🚜 '+esc(o.contractor.name||'—')+(o.contractor.task?' · '+esc(o.contractor.task):'')+
+      (o.cost&&o.cost.mode==='unit'?' · '+o.cost.units+' × £'+o.cost.per:'')+
+      (o.cost&&o.cost.total?' = £'+o.cost.total.toFixed(0):'')+
+      ' · '+(o.contractor.paid==='paid'?'<span style="color:#7fd06a">wedi talu/paid</span>':'<span style="color:#e6b860">i\'w dalu/owed</span>')) : '';
     return '<div class="op"><div class="op-top">'+
       '<span class="op-type"><span class="op-type-badge" style="background:'+c+'"></span>'+esc(o.type)+'</span>'+
       '<span class="op-date">'+fmtDate(o.date)+(o.time?' '+o.time:'')+'</span></div>'+
       (o.product?'<div class="op-detail">'+esc(o.product)+'</div>':'')+
+      (saleStr?'<div class="op-detail op-sale">'+saleStr+'</div>':'')+
+      (ctStr?'<div class="op-detail" style="color:#d2b48c">'+ctStr+'</div>':'')+
       (drl?'<div class="op-detail" style="color:#a8c98a">🌱 '+esc(drl)+'</div>':'')+
       (spr?'<div class="op-detail" style="color:#b9a3e0">💧 '+esc(spr)+'</div>':'')+
       (o.weather?'<div class="op-detail" style="color:#7fc3e0">🌤 '+wxStr(o.weather)+'</div>':
@@ -876,7 +986,9 @@ function renderOps(name){
   }).join('');
   list.querySelectorAll('.op-edit').forEach(b=>b.onclick=()=>{
     const op=(store[name].ops||[]).find(x=>x.id==b.dataset.edit);
-    if(op)openOpModal(op);
+    if(!op)return;
+    if(op.sale){ openSell(Object.assign({field:name},op)); }
+    else openOpModal(op);
   });
   list.querySelectorAll('.op-del').forEach(b=>b.onclick=async()=>{
     if(confirm('Dileu y gweithred hwn? · Delete this operation?')){
@@ -922,24 +1034,33 @@ function fieldHa(){const f=FIELDS.features.find(x=>x.properties.name===selected)
 function isHarvest(t){return t.includes('Cynaeafu')||t.toLowerCase().includes('harvest');}
 function isDrill(t){return t.includes('Drilio')||t.toLowerCase().includes('drilling');}
 function isSpray(t){return t.includes('Chwynladdwr')||t.includes('Ffwngladdwr')||t.includes('Pryfleiddiad')||t.toLowerCase().includes('spray');}
+function isContractor(t){return t.includes('Contractwr')||t.toLowerCase().includes('contractor');}
 
 function syncCostMode(){
   const mode=document.getElementById('costMode').value;
   document.getElementById('costTotalWrap').style.display=mode==='total'?'block':'none';
   document.getElementById('costRateWrap').style.display=mode==='rate'?'block':'none';
+  document.getElementById('costUnitWrap').style.display=mode==='unit'?'block':'none';
   calcCost();
 }
 function calcCost(){
   const rate=parseFloat(document.getElementById('costRate').value)||0;
   const area=parseFloat(document.getElementById('costArea').value)||0;
-  const el=document.getElementById('costCalc');
-  el.textContent=(rate&&area)?('= £'+(rate*area).toFixed(2)):'';
+  document.getElementById('costCalc').textContent=(rate&&area)?('= £'+(rate*area).toFixed(2)):'';
+  const units=parseFloat(document.getElementById('costUnits').value)||0;
+  const per=parseFloat(document.getElementById('costPerUnit').value)||0;
+  document.getElementById('costUnitCalc').textContent=(units&&per)?('= £'+(units*per).toFixed(2)+' ('+units+' × £'+per+')'):'';
 }
 function syncYieldVis(){
   const t=document.getElementById('opType').value;
   document.getElementById('yieldSection').style.display=isHarvest(t)?'block':'none';
   document.getElementById('drillSection').style.display=isDrill(t)?'block':'none';
   document.getElementById('spraySection').style.display=isSpray(t)?'block':'none';
+  document.getElementById('contractorSection').style.display=isContractor(t)?'block':'none';
+  // default contractor ops to per-unit costing for convenience
+  if(isContractor(t) && document.getElementById('costMode').value==='total'){
+    document.getElementById('costMode').value='unit'; syncCostMode();
+  }
 }
 function calcYield(){
   const t=parseFloat(document.getElementById('yldTonnes').value)||0;
@@ -950,6 +1071,8 @@ function calcYield(){
 document.getElementById('costMode').onchange=syncCostMode;
 document.getElementById('costRate').oninput=calcCost;
 document.getElementById('costArea').oninput=calcCost;
+document.getElementById('costUnits').oninput=calcCost;
+document.getElementById('costPerUnit').oninput=calcCost;
 document.getElementById('opType').onchange=syncYieldVis;
 document.getElementById('yldTonnes').oninput=calcYield;
 document.getElementById('yldArea').oninput=calcYield;
@@ -971,11 +1094,19 @@ function openOpModal(existing){
     document.getElementById('costTotal').value='';
     document.getElementById('costRate').value=o.cost.rate||'';
     document.getElementById('costArea').value=o.cost.area||fieldHa().toFixed(2);
+    document.getElementById('costUnits').value='';document.getElementById('costPerUnit').value='';
+  }else if(o.cost&&o.cost.mode==='unit'){
+    document.getElementById('costMode').value='unit';
+    document.getElementById('costTotal').value='';
+    document.getElementById('costRate').value='';document.getElementById('costArea').value=fieldHa().toFixed(2);
+    document.getElementById('costUnits').value=o.cost.units||'';
+    document.getElementById('costPerUnit').value=o.cost.per||'';
   }else{
     document.getElementById('costMode').value='total';
     document.getElementById('costTotal').value=(o.cost&&o.cost.total)||'';
     document.getElementById('costRate').value='';
     document.getElementById('costArea').value=fieldHa().toFixed(2);
+    document.getElementById('costUnits').value='';document.getElementById('costPerUnit').value='';
   }
   // yield
   const y=o.yield||{};
@@ -994,7 +1125,17 @@ function openOpModal(existing){
   document.getElementById('spHI').value=s.hi||'';
   document.getElementById('spOperator').value=s.operator||author||'';
   document.getElementById('spCond').value=s.conditions||'';
+  // contractor
+  const ct=o.contractor||{};
+  document.getElementById('ctName').value=ct.name||'';
+  document.getElementById('ctPhone').value=ct.phone||'';
+  document.getElementById('ctTask').value=ct.task||'';
+  document.getElementById('ctPaid').value=ct.paid||'due';
+  // populate contractor name suggestions
+  const cnames=[...new Set(allContractorOps().map(x=>x.contractor&&x.contractor.name).filter(Boolean))];
+  document.getElementById('contractorList').innerHTML=cnames.map(n=>'<option value="'+esc(n)+'">').join('');
   document.getElementById('costCalc').textContent='';
+  document.getElementById('costUnitCalc').textContent='';
   document.getElementById('yldCalc').textContent='';
   syncCostMode();syncYieldVis();
   opModal.classList.add('open');
@@ -1010,10 +1151,21 @@ document.getElementById('opSave').onclick=async()=>{
   if(mode==='total'){
     const v=parseFloat(document.getElementById('costTotal').value);
     if(v>0)cost={mode:'total',total:v};
+  }else if(mode==='unit'){
+    const units=parseFloat(document.getElementById('costUnits').value)||0;
+    const per=parseFloat(document.getElementById('costPerUnit').value)||0;
+    if(units>0&&per>0)cost={mode:'unit',units,per,total:+(units*per).toFixed(2)};
   }else{
     const rate=parseFloat(document.getElementById('costRate').value)||0;
     const area=parseFloat(document.getElementById('costArea').value)||0;
     if(rate>0&&area>0)cost={mode:'rate',rate,area,total:+(rate*area).toFixed(2)};
+  }
+  // contractor details
+  let contractor=null;
+  if(isContractor(type)){
+    const v=id=>document.getElementById(id).value.trim();
+    if(v('ctName')||v('ctTask'))
+      contractor={name:v('ctName'),phone:v('ctPhone'),task:v('ctTask'),paid:document.getElementById('ctPaid').value};
   }
   // yield (harvest only)
   let yield_=null;
@@ -1050,7 +1202,7 @@ document.getElementById('opSave').onclick=async()=>{
     time:document.getElementById('opTime').value,
     product:document.getElementById('opProduct').value.trim(),
     notes:document.getElementById('opNotes').value.trim(),
-    cost,yield:yield_,drill,spray,by:author||''};
+    cost,yield:yield_,drill,spray,contractor,by:author||''};
   if(!store[selected])store[selected]={};
   if(!store[selected].ops)store[selected].ops=[];
   if(editingOpId){
@@ -1386,6 +1538,176 @@ function kmhToMph(k){ return k*0.621371; }
 function boomWind(w10){ return w10 * (Math.log(1/0.03)/Math.log(10/0.03)); } // ~0.63×
 function windCompass(deg){ if(deg==null)return''; const d=['N','NE','E','SE','S','SW','W','NW']; return d[Math.round(deg/45)%8]; }
 function fieldCentroid(name){ const f=FIELDS.features.find(x=>x.properties.name===name); return f?f.properties.centroid:null; }
+
+// ---- sell feature ----
+function allSales(){
+  const rows=[];
+  Object.keys(store).forEach(fname=>{
+    if(fname.startsWith('_'))return;
+    const rec=store[fname]; if(!rec||!rec.ops)return;
+    rec.ops.forEach(o=>{ if(o.sale) rows.push(Object.assign({field:fname},o)); });
+  });
+  // misc sales stored under _sales
+  (store._sales||[]).forEach(o=>rows.push(Object.assign({field:'Amrywiol · Misc'},o)));
+  return rows;
+}
+function openSell(existing){
+  editingSaleRef=existing||null;
+  document.getElementById('sellTitle').textContent = existing?'Golygu gwerthiant · Edit sale':'Gwerthu · Sell';
+  // populate field dropdown
+  const sel=document.getElementById('slField');
+  sel.innerHTML='<option value="_misc">Amrywiol · Misc (dim cae / no field)</option>'+
+    FIELDS.features.map(f=>'<option value="'+esc(f.properties.name)+'">'+esc(f.properties.name)+'</option>').join('');
+  // buyer autocomplete
+  const names=[...new Set(allSales().map(s=>s.sale&&s.sale.buyer).filter(Boolean))];
+  document.getElementById('buyerList').innerHTML=names.map(n=>'<option value="'+esc(n)+'">').join('');
+  // fill (edit) or reset
+  const o=existing||{}; const sa=(existing&&existing.sale)||{};
+  document.getElementById('slBuyer').value=sa.buyer||'';
+  document.getElementById('slPhone').value=sa.phone||'';
+  document.getElementById('slContact').value=sa.contact||'';
+  document.getElementById('slField').value=existing?(existing.field==='Amrywiol · Misc'?'_misc':existing.field):(selected||'_misc');
+  document.getElementById('slItem').value=sa.item||'';
+  document.getElementById('slQty').value=sa.qty||'';
+  document.getElementById('slPrice').value=(existing&&existing.yield&&existing.yield.value)||'';
+  document.getElementById('slDate').value=o.date||new Date().toISOString().slice(0,10);
+  document.getElementById('slNotes').value=o.notes||'';
+  // show new tab
+  document.querySelectorAll('.stab').forEach(x=>x.classList.toggle('active',x.dataset.stab==='new'));
+  document.getElementById('sell-new').style.display='block';
+  document.getElementById('sell-buyers').style.display='none';
+  document.getElementById('sell-totals').style.display='none';
+  document.getElementById('sellCloseRow').style.display='none';
+  document.getElementById('sellModal').classList.add('open');
+}
+let editingSaleRef=null;
+document.getElementById('sellBtn').onclick=()=>openSell(null);
+document.getElementById('sellCancel').onclick=()=>document.getElementById('sellModal').classList.remove('open');
+document.getElementById('sellClose').onclick=()=>document.getElementById('sellModal').classList.remove('open');
+document.getElementById('sellModal').addEventListener('click',e=>{if(e.target.id==='sellModal')e.currentTarget.classList.remove('open')});
+
+document.getElementById('sellSave').onclick=async()=>{
+  const buyer=document.getElementById('slBuyer').value.trim();
+  const fieldVal=document.getElementById('slField').value;
+  const price=parseFloat(document.getElementById('slPrice').value)||0;
+  if(!buyer && !document.getElementById('slItem').value.trim()){ alert('Rhowch brynwr neu eitem · Enter a buyer or item'); return; }
+  const sale={buyer,phone:document.getElementById('slPhone').value.trim(),
+    contact:document.getElementById('slContact').value.trim(),
+    item:document.getElementById('slItem').value.trim(),
+    qty:document.getElementById('slQty').value.trim()};
+  const op={id:(editingSaleRef&&editingSaleRef.id)||Date.now()+''+Math.floor(Math.random()*999),
+    type:'Gwerthiant / Sale', date:document.getElementById('slDate').value,
+    notes:document.getElementById('slNotes').value.trim(),
+    sale, yield:price?{value:price}:null, by:author||''};
+  // remove any prior location if editing (field may have changed)
+  if(editingSaleRef){
+    // delete old occurrence
+    if(editingSaleRef.field==='Amrywiol · Misc'){ store._sales=(store._sales||[]).filter(x=>x.id!=op.id); }
+    else if(store[editingSaleRef.field]&&store[editingSaleRef.field].ops){ store[editingSaleRef.field].ops=store[editingSaleRef.field].ops.filter(x=>x.id!=op.id); }
+  }
+  if(fieldVal==='_misc'){ if(!store._sales)store._sales=[]; store._sales.push(op); }
+  else { if(!store[fieldVal])store[fieldVal]={}; if(!store[fieldVal].ops)store[fieldVal].ops=[]; store[fieldVal].ops.push(op); }
+  editingSaleRef=null;
+  document.getElementById('sellModal').classList.remove('open');
+  await commit();
+  if(selected)renderOps(selected);
+};
+
+function renderBuyers(){
+  const rows=allSales();
+  const byBuyer={};
+  rows.forEach(s=>{ const b=(s.sale&&s.sale.buyer)||'(dienw/unknown)'; (byBuyer[b]=byBuyer[b]||[]).push(s); });
+  const body=document.getElementById('buyersBody');
+  const keys=Object.keys(byBuyer).sort();
+  if(!keys.length){ body.innerHTML='<div class="month-empty">Dim gwerthiannau eto · No sales logged yet</div>'; return; }
+  body.innerHTML=keys.map(b=>{
+    const items=byBuyer[b]; const s0=items[0].sale||{};
+    const tot=items.reduce((s,x)=>s+((x.yield&&x.yield.value)||0),0);
+    const phone=items.map(x=>x.sale&&x.sale.phone).find(Boolean)||'';
+    const contact=items.map(x=>x.sale&&x.sale.contact).find(Boolean)||'';
+    const hist=items.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>
+      '<div>'+fmtDate(x.date)+' — '+esc((x.sale&&x.sale.item)||'—')+(x.sale&&x.sale.qty?' ×'+esc(x.sale.qty):'')+
+      ' · '+esc(x.field)+((x.yield&&x.yield.value)?' · £'+x.yield.value.toFixed(0):'')+'</div>').join('');
+    return '<div class="buyer-card"><div class="bn">'+esc(b)+'<span class="btot">£'+tot.toFixed(0)+'</span></div>'+
+      '<div class="bc">'+(phone?'📞 '+esc(phone):'')+(phone&&contact?' · ':'')+(contact?esc(contact):'')+
+      (!phone&&!contact?'<span style="opacity:.5">dim cyswllt / no contact</span>':'')+'</div>'+
+      '<div class="bh">'+hist+'</div></div>';
+  }).join('');
+}
+function renderSellTotals(){
+  const by=document.getElementById('sellTotalBy').value;
+  const rows=allSales();
+  const groups={};
+  rows.forEach(s=>{
+    let k = by==='buyer'?((s.sale&&s.sale.buyer)||'(dienw)') : by==='field'?s.field : ((s.sale&&s.sale.item)||'(dim eitem)');
+    (groups[k]=groups[k]||[]).push(s);
+  });
+  const body=document.getElementById('totalsBody');
+  const keys=Object.keys(groups).sort();
+  if(!keys.length){ body.innerHTML='<div class="month-empty">Dim gwerthiannau eto · No sales yet</div>'; return; }
+  let grand=0;
+  let html='<div class="rep-row head"><div></div><div class="num">Nifer·Count</div><div class="num">Cyfanswm·Total</div></div>';
+  keys.forEach(k=>{
+    const g=groups[k]; const v=g.reduce((s,x)=>s+((x.yield&&x.yield.value)||0),0); grand+=v;
+    html+='<div class="rep-row"><div class="nm">'+esc(k)+'</div><div class="num">'+g.length+'</div>'+
+      '<div class="num out">£'+v.toFixed(0)+'</div></div>';
+  });
+  html+='<div class="rep-total"><span>Cyfanswm · Total</span><span style="color:var(--gold)">£'+grand.toFixed(0)+'</span></div>';
+  body.innerHTML=html;
+}
+document.querySelectorAll('.stab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.stab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const which=t.dataset.stab;
+  document.getElementById('sell-new').style.display=which==='new'?'block':'none';
+  document.getElementById('sell-buyers').style.display=which==='buyers'?'block':'none';
+  document.getElementById('sell-totals').style.display=which==='totals'?'block':'none';
+  document.getElementById('sellCloseRow').style.display=which==='new'?'none':'block';
+  if(which==='buyers')renderBuyers();
+  if(which==='totals')renderSellTotals();
+});
+document.getElementById('sellTotalBy').onchange=renderSellTotals;
+
+// ---- contractors ----
+function allContractorOps(){
+  const rows=[];
+  Object.keys(store).forEach(fname=>{
+    if(fname.startsWith('_'))return;
+    const rec=store[fname]; if(!rec||!rec.ops)return;
+    rec.ops.forEach(o=>{ if(o.contractor) rows.push(Object.assign({field:fname},o)); });
+  });
+  return rows;
+}
+function renderContractors(){
+  const rows=allContractorOps();
+  const body=document.getElementById('contractorBody');
+  const byName={};
+  rows.forEach(r=>{ const n=(r.contractor&&r.contractor.name)||'(dienw)'; (byName[n]=byName[n]||[]).push(r); });
+  const keys=Object.keys(byName).sort();
+  if(!keys.length){ body.innerHTML='<div class="month-empty">Dim gwaith contractwr eto · No contractor work logged yet</div>'; return; }
+  body.innerHTML=keys.map(n=>{
+    const items=byName[n];
+    const total=items.reduce((s,x)=>s+((x.cost&&x.cost.total)||0),0);
+    const owed=items.filter(x=>!x.contractor||x.contractor.paid!=='paid').reduce((s,x)=>s+((x.cost&&x.cost.total)||0),0);
+    const phone=items.map(x=>x.contractor&&x.contractor.phone).find(Boolean)||'';
+    const hist=items.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>
+      '<div>'+fmtDate(x.date)+' — '+esc((x.contractor&&x.contractor.task)||'—')+' · '+esc(x.field)+
+      ((x.cost&&x.cost.total)?' · £'+x.cost.total.toFixed(0):'')+
+      (x.contractor&&x.contractor.paid==='paid'?' ✓':' <span style="color:#e6b860">owed</span>')+'</div>').join('');
+    return '<div class="buyer-card"><div class="bn">'+esc(n)+'<span class="btot">'+
+      (owed>0?'<span style="color:#e6b860">£'+owed.toFixed(0)+' owed</span> / ':'')+'£'+total.toFixed(0)+'</span></div>'+
+      '<div class="bc">'+(phone?'📞 '+esc(phone):'<span style="opacity:.5">dim ffôn</span>')+'</div>'+
+      '<div class="bh">'+hist+'</div></div>';
+  }).join('');
+}
+document.querySelectorAll('.atab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.atab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const which=t.dataset.atab;
+  document.getElementById('asset-machines').style.display=which==='machines'?'block':'none';
+  document.getElementById('asset-contractors').style.display=which==='contractors'?'block':'none';
+  if(which==='contractors')renderContractors();
+});
 
 } // end initApp
 </script>
