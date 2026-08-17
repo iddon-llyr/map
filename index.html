@@ -562,12 +562,17 @@
     <select id="slField"></select>
     <div style="display:flex;gap:8px">
       <div style="flex:2"><label>Beth · Item</label><input type="text" id="slItem" placeholder="e.e. Byrnau silwair · Silage bales"></div>
-      <div style="flex:1"><label>Faint · Qty</label><input type="text" id="slQty" placeholder="e.e. 20"></div>
+      <div style="flex:1"><label>Faint · Qty</label><input type="number" step="1" min="0" id="slQty" placeholder="e.e. 20"></div>
     </div>
     <div style="display:flex;gap:8px">
-      <div style="flex:1"><label>Pris (£) · Price</label><input type="number" step="0.01" min="0" id="slPrice" placeholder="cyfanswm £ · total £"></div>
+      <div style="flex:1"><label>£ yr un · Per unit</label><input type="number" step="0.01" min="0" id="slPerUnit" placeholder="£/bale"></div>
+      <div style="flex:1"><label>Cost byrnu/un · Baling cost/unit</label><input type="number" step="0.01" min="0" id="slBaleCost" placeholder="£/bale"></div>
+      <div style="flex:1"><label>Pris (£) · Total</label><input type="number" step="0.01" min="0" id="slPrice" placeholder="cyfanswm £ · total"></div>
+    </div>
+    <div style="display:flex;gap:8px">
       <div style="flex:1"><label>Dyddiad · Date</label><input type="date" id="slDate"></div>
     </div>
+    <div style="font-size:.74rem;margin:-2px 0 4px" id="slCalcNote"></div>
     <label>Nodiadau · Notes <span style="font-weight:400">(dewisol)</span></label>
     <input type="text" id="slNotes" placeholder="e.e. paid cash, collecting Friday">
     <div class="modal-btns">
@@ -1570,6 +1575,10 @@ function openSell(existing){
   document.getElementById('slItem').value=sa.item||'';
   document.getElementById('slQty').value=sa.qty||'';
   document.getElementById('slPrice').value=(existing&&existing.yield&&existing.yield.value)||'';
+  document.getElementById('slPerUnit').value=(sa&&sa.perUnit)||'';
+  document.getElementById('slBaleCost').value=(sa&&sa.baleCost)||(store._settings&&store._settings.baleCost)||'';
+  document.getElementById('slCalcNote').textContent='';
+  setTimeout(sellCalc,0);
   document.getElementById('slDate').value=o.date||new Date().toISOString().slice(0,10);
   document.getElementById('slNotes').value=o.notes||'';
   // show new tab
@@ -1582,6 +1591,33 @@ function openSell(existing){
 }
 let editingSaleRef=null;
 document.getElementById('sellBtn').onclick=()=>openSell(null);
+function sellCalc(){
+  const qty=parseFloat(document.getElementById('slQty').value)||0;
+  const per=parseFloat(document.getElementById('slPerUnit').value)||0;
+  const baleCost=parseFloat(document.getElementById('slBaleCost').value)||0;
+  const note=document.getElementById('slCalcNote');
+  if(qty&&per){
+    const tot=+(qty*per).toFixed(2);
+    document.getElementById('slPrice').value=tot;
+    let s='<span style="color:var(--gold)">= £'+tot.toFixed(2)+' ('+qty+' × £'+per+')</span>';
+    if(baleCost>0){
+      const profitPer=+(per-baleCost).toFixed(2);
+      const profitTot=+(profitPer*qty).toFixed(2);
+      const col=profitPer>=0?'#7fd06a':'#ff9b9b';
+      s+=' &nbsp;·&nbsp; <span style="color:'+col+'">elw/profit £'+profitPer.toFixed(2)+'/un (£'+per+' − £'+baleCost+') = £'+profitTot.toFixed(2)+'</span>';
+    }
+    note.innerHTML=s;
+  }else{
+    note.innerHTML='';
+  }
+}
+document.getElementById('slQty').addEventListener('input',sellCalc);
+document.getElementById('slPerUnit').addEventListener('input',sellCalc);
+document.getElementById('slBaleCost').addEventListener('input',()=>{ saveBaleDefault(); sellCalc(); });
+function saveBaleDefault(){
+  const v=document.getElementById('slBaleCost').value;
+  if(v){ if(!store._settings)store._settings={}; store._settings.baleCost=v; }
+}
 document.getElementById('sellCancel').onclick=()=>document.getElementById('sellModal').classList.remove('open');
 document.getElementById('sellClose').onclick=()=>document.getElementById('sellModal').classList.remove('open');
 document.getElementById('sellModal').addEventListener('click',e=>{if(e.target.id==='sellModal')e.currentTarget.classList.remove('open')});
@@ -1594,7 +1630,9 @@ document.getElementById('sellSave').onclick=async()=>{
   const sale={buyer,phone:document.getElementById('slPhone').value.trim(),
     contact:document.getElementById('slContact').value.trim(),
     item:document.getElementById('slItem').value.trim(),
-    qty:document.getElementById('slQty').value.trim()};
+    qty:document.getElementById('slQty').value,
+    perUnit:document.getElementById('slPerUnit').value,
+    baleCost:document.getElementById('slBaleCost').value};
   const op={id:(editingSaleRef&&editingSaleRef.id)||Date.now()+''+Math.floor(Math.random()*999),
     type:'Gwerthiant / Sale', date:document.getElementById('slDate').value,
     notes:document.getElementById('slNotes').value.trim(),
